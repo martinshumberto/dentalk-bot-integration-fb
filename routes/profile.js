@@ -1,6 +1,6 @@
-"use strict";
-import webhook from "../app/webhook";
+'use strict';
+import webhook from '../app/webhook';
 
 export default function(app) {
-  app.route("/profile").get(webhook.setProfile);
+    app.route('/profile').get(webhook.setProfile);
 }
