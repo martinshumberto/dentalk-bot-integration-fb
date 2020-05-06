@@ -7,8 +7,8 @@ import graphApi from './graph-api';
 
 const credentials = {
     credentials: {
-        private_key: config.DIALOGFLOW_PRIVATE_KEY,
-        client_email: config.DIALOGFLOW_CLIENT_EMAIL
+        private_key: config.GOOGLE_PRIVATE_KEY,
+        client_email: config.GOOGLE_CLIENT_EMAIL
     }
 };
 
@@ -22,24 +22,23 @@ const sessionClient = new dialogflow.SessionsClient(credentials);
  */
 const sendToDialogFlow = async (sender, textString, params) => {
     sendTypingOn(sender);
-
+    
     const sessionPath = sessionClient.sessionPath(
-        config.DIALOGFLOW_PROJECT_ID,
+        config.GOOGLE_PROJECT_ID,
         utils.sessionIds.get(sender)
     );
-
     try {
         const request = {
             session: sessionPath,
             queryInput: {
                 text: {
                     text: textString,
-                    languageCode: config.DIALOGFLOW_LANGUAGE_CODE
+                    languageCode: config.GOOGLE_LANGUAGE_CODE
                 }
             },
             queryParams: {
                 payload: {
-                    data: params
+                    data: params,
                 }
             }
         };

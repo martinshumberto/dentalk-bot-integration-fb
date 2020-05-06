@@ -30,7 +30,7 @@ app.listen(config.PORT, () => {
 
     if (
         config.APP_URL &&
-    config.SITE_URL
+        config.SITE_URL
     ) {
         console.log(
             '⚡️ [BOT CONSILIO] Make sure to set the both the Messenger profile ' +

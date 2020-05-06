@@ -24,13 +24,13 @@ const sessionIds = new Map();
 const usersMap = new Map();
 
 const setSessionandUser = senderID => {
-    if (!sessionIds.has(senderID)) {
-        sessionIds.set(senderID, uuid.v4());
-    }
     if (!usersMap.has(senderID)) {
         graphAPI.addUser(function(user) {
             usersMap.set(senderID, user);
         }, senderID);
+    }
+    if (!sessionIds.has(senderID)) {
+        sessionIds.set(senderID, uuid.v4());
     }
 };
 

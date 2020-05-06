@@ -4,14 +4,17 @@ require('dotenv').config();
 
 const ENV_VARS = [
     'PORT',
+    'APP_URL',
+    'SITE_URL',
+    'NAME_COMPANY',
     'PAGE_ID',
     'APP_ID',
     'PAGE_ACCESS_TOKEN',
     'VERIFY_TOKEN',
-    'DIALOGFLOW_CLIENT_EMAIL',
-    'DIALOGFLOW_PROJECT_ID',
-    'DIALOGFLOW_LANGUAGE_CODE',
-    'DIALOGFLOW_PRIVATE_KEY',
+    'GOOGLE_CLIENT_EMAIL',
+    'GOOGLE_PROJECT_ID',
+    'GOOGLE_LANGUAGE_CODE',
+    'GOOGLE_PRIVATE_KEY'
 ];
 
 export default {
@@ -19,19 +22,22 @@ export default {
     mPlatformVersion: 'v3.2',
 
     PORT: process.env.PORT || 3000,
+
+    APP_URL: process.env.APP_URL,
+    SITE_URL: process.env.SITE_URL,
+    NAME_COMPANY: process.env.NAME_COMPANY,
+
     PAGE_ID: process.env.PAGE_ID,
     APP_ID: process.env.APP_ID,
     APP_SECRET: process.env.APP_SECRET,
     PAGE_ACCESS_TOKEN: process.env.PAGE_ACCESS_TOKEN,
     VERIFY_TOKEN: process.env.VERIFY_TOKEN,
-    DIALOGFLOW_CLIENT_EMAIL: process.env.DIALOGFLOW_CLIENT_EMAIL,
-    DIALOGFLOW_PROJECT_ID: process.env.DIALOGFLOW_PROJECT_ID,
-    DIALOGFLOW_LANGUAGE_CODE: process.env.DIALOGFLOW_LANGUAGE_CODE,
-    DIALOGFLOW_PRIVATE_KEY: process.env.DIALOGFLOW_PRIVATE_KEY,
 
-    APP_URL: process.env.APP_URL,
-    SITE_URL: process.env.SITE_URL,
-    NAME_COMPANY: process.env.NAME_COMPANY,
+    GOOGLE_CLIENT_EMAIL: process.env.GOOGLE_CLIENT_EMAIL,
+    GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID,
+    GOOGLE_LANGUAGE_CODE: process.env.GOOGLE_LANGUAGE_CODE,
+    GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
+    
 
     get mPlatfom() {
         return this.mPlatformDomain + '/' + this.mPlatformVersion;

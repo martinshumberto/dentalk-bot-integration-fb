@@ -4,6 +4,8 @@ import profile from './profile';
 import receive from './receive';
 import graphApi from './graph-api';
 
+process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
+
 const verifyWebhook = async (req, res) => {
     try {
         const mode = req.query['hub.mode'];
@@ -25,6 +27,35 @@ const verifyWebhook = async (req, res) => {
 };
 
 const messageHandler = async (req, res) => {
+    // let userid = req.body.originalDetectIntentRequest.payload.user.userId;
+    // var user = utils.usersMap.get(userid);
+
+    const action = req.body.queryResult && req.body.queryResult.action ? req.body.queryResult.action : null;
+    const params = req.body.queryResult && req.body.queryResult.parameters ? req.body.queryResult.parameters : null;
+    
+    if (action == 'input.welcome') {
+        console.log('REQ ', req.body);
+        if (params) {
+            for(let obj in req.body.queryResult.outputContexts){
+                req.body.queryResult.outputContexts[obj].parameters.name = 'DSIUASHDUASHDIUHA';
+                req.body.queryResult.outputContexts[obj].parameters['name.original'] = 'DSIUASHDUASHDIUHA';
+            }    
+            req.body.queryResult.parameters = { name: 'DSIUASHDUASHDIUHA' };
+            return res.send(JSON.stringify({
+                parameters: { name: 'DSIUASHDUASHDIUHA' },
+                followupEventInput: {
+                    name: 'welcome',
+                    languageCode: 'pt-BR',
+                    parameters: {
+                        name: 'DSIUASHDUASHDIUHA'
+                    }
+                },
+                outputContexts : req.body.queryResult.outputContexts
+            })
+            );
+        }
+       
+    }
     try {
         let body = req.body;
 
@@ -36,7 +67,7 @@ const messageHandler = async (req, res) => {
                 let hookEvent = pageEntry.messaging[0];
                 let senderPsid = hookEvent.sender.id;
 
-                utils.setSessionandUser(senderPsid);
+                utils.usersMap.get(senderPsid);
 
                 pageEntry.messaging.forEach(function(messagingEvent) {
                     if (messagingEvent.optin) {
@@ -44,9 +75,9 @@ const messageHandler = async (req, res) => {
                     } else if (messagingEvent.message) {
                         receive.receivedMessage(messagingEvent);
                     } else if (messagingEvent.delivery) {
-                        receive.receivedDeliveryConfirmation(messagingEvent); // listening for all messages
+                        receive.receivedDeliveryConfirmation(messagingEvent);
                     } else if (messagingEvent.postback) {
-                        receive.receivedPostback(messagingEvent); // usually a click on a botton, menu, structured message
+                        receive.receivedPostback(messagingEvent);
                     } else if (messagingEvent.read) {
                         receive.receivedMessageRead(messagingEvent);
                     } else if (messagingEvent.account_linking) {
@@ -61,7 +92,8 @@ const messageHandler = async (req, res) => {
             });
 
             res.status(200).send('⚡️ [BOT CONSILIO] Event receiving.');
-        }
+        } 
+
     } catch (error) {
         console.log('❌ [BOT CONSILIO] Error in post webhook. ', error);
     }
