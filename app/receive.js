@@ -79,6 +79,7 @@ const handleMessages = (messages, sender) => {
     }
 };
 
+
 /**
  * Process single message
  * @param {Object} message
@@ -208,21 +209,25 @@ const handleDialogFlowResponse = (sender, response) => {
  * @param {*} parameters
  */
 const handleDFAObj = {
-    'input.welcome': (sender, messages) => {
-        var user = utils.usersMap.get(sender);
-
+    'input.welcome': async (sender, messages) => {
         send.sendTypingOn(sender);
-        send.sendTextMessage(sender, 'Olá ' + user.first_name + '!');
+        setTimeout(function() {
+            handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.schedule': (sender, messages) => {
+        send.sendTypingOn(sender);
         setTimeout(function() {
             handleMessages(messages, sender);
         }, 1000);
     },
     'default': (sender, messages) => {
+        send.sendTypingOn(sender);
         handleMessages(messages, sender);
     }
 };
-const handleDialogFlowAction = (sender, action, messages) => {
-    return (handleDFAObj[action] || handleDFAObj['default'])(sender, messages);
+const handleDialogFlowAction = (sender, action, messages, contexts, parameters) => {
+    return (handleDFAObj[action] ? handleDFAObj[action] : handleDFAObj['default'])(sender, messages, contexts, parameters);
 };
 
 /**
@@ -251,6 +256,7 @@ const receivedMessage = event => {
     var message = event.message;
 
     utils.setSessionandUser(senderID);
+
     console.log(
         '⚡️ [BOT CONSILIO] Received message for user %d and page %d at %d with message:',
         senderID,
@@ -305,6 +311,8 @@ const receivedPostback = event => {
     var timeOfPostback = event.timestamp;
 
     var payload = event.postback.payload;
+
+    console.log('PAYLOAD', payload);
 
     console.log(
         '⚡️ [BOT CONSILIO] Received postback for user %d and page %d with payload \'%s\' ' +
