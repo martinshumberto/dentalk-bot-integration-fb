@@ -1,12 +1,14 @@
 'use strict';
 import request from 'request';
 import config from '../config/variables';
+import mysql from '../config/mysql';
+import utils from './utils';
 
 /**
  * Send call to Facebook Graph API
  * @param {*} callback
  */
-const sendCall = callback => {
+const sendCall = async callback => {
     request(
         {
             uri: `${config.mPlatfom}/me/messages`,
@@ -20,6 +22,8 @@ const sendCall = callback => {
             if (!error && response.statusCode == 200) {
                 let recipientId = body.recipient_id;
                 let messageId = body.message_id;
+
+                utils.setSessionandUser(recipientId);
 
                 if (messageId) {
                     console.log(
@@ -257,10 +261,18 @@ const addUser = (callback, userId) => {
                 access_token: config.PAGE_ACCESS_TOKEN
             }
         },
-        function(error, response, body) {
+        async function(error, response, body) {
             if (!error && response.statusCode == 200) {
                 var user = JSON.parse(body);
                 if (user.first_name.length > 0) {
+                    const consulta = await mysql.execQuery(`SELECT * FROM leads WHERE senderID= '${userId}'`).catch(err => {
+                        console.log('❌ ERRO: ', err);
+                    });
+                    if (consulta.length == 0) {
+                        await mysql.execQuery(`INSERT INTO leads (senderID, first_name, last_name, profile_pic) VALUES ('${userId}', '${user.first_name}','${user.last_name}', '${user.profile_pic}')`).catch(err => {
+                            console.log('❌ ERRO: ', err);
+                        });
+                    }
                     callback(user);
                 } else {
                     console.log(

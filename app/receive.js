@@ -2,6 +2,7 @@ import { struct } from 'pb-util';
 import send from './send';
 import utils from './utils';
 import graphApi from './graph-api';
+import mysql from '../config/mysql';
 
 /**
  * Process message type card
@@ -210,7 +211,35 @@ const handleDialogFlowResponse = (sender, response) => {
  */
 const handleDFAObj = {
     'input.welcome': async (sender, messages) => {
+        // const user = utils.usersMap.get(sender);
+
         send.sendTypingOn(sender);
+        // send.sendTextMessage(sender, `Olá ${user.first_name}!`);
+        setTimeout(function() {
+            handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.phone': (sender, messages, contexts, parameters) => {
+        send.sendTypingOn(sender);
+        const phone = parameters.fields.phone.stringValue;
+
+        mysql.execQuery(`UPDATE leads SET phone = '${phone}' WHERE senderID = '${sender}'`)
+            .catch(err => {
+                console.log('❌ ERRO: ', err);
+            });
+        setTimeout(function() {
+            handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.email': (sender, messages, contexts, parameters) => {
+        send.sendTypingOn(sender);
+        const email = parameters.fields.email.stringValue;
+
+        mysql.execQuery(`UPDATE leads SET email = '${email}' WHERE senderID = '${sender}'`)
+            .catch(err => {
+                console.log('❌ ERRO: ', err);
+            });
+
         setTimeout(function() {
             handleMessages(messages, sender);
         }, 1000);
@@ -219,6 +248,22 @@ const handleDFAObj = {
         send.sendTypingOn(sender);
         setTimeout(function() {
             handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.unknown': (sender, messages) => {
+        send.sendTypingOn(sender);
+        handleMessages(messages, sender);
+        setTimeout(function() {
+            let text = 'Opps, talvez eu não tenha aprendido o suficiente 😔. \n\n' +
+                    'Podemos tentar de novo, ou se preferir falar com um dos nossos humandos disponíveis 💜.';
+            let replies = [
+                {
+                    'content_type': 'text',
+                    'title': 'Falar com humano',
+                    'payload': 'LIVE_AGENT'
+                }
+            ];
+            send.sendQuickReply(sender, text, replies);
         }, 1000);
     },
     'default': (sender, messages) => {
@@ -312,8 +357,6 @@ const receivedPostback = event => {
 
     var payload = event.postback.payload;
 
-    console.log('PAYLOAD', payload);
-
     console.log(
         '⚡️ [BOT CONSILIO] Received postback for user %d and page %d with payload \'%s\' ' +
       'at %d',
@@ -324,7 +367,6 @@ const receivedPostback = event => {
     );
 
     return (receivedPbObj[payload] || receivedPbObj['default'])(senderID, payload);
-
 };
 
 /**

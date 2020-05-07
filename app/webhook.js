@@ -3,8 +3,26 @@ import utils from './utils';
 import profile from './profile';
 import receive from './receive';
 import graphApi from './graph-api';
+import moment from 'moment';
+import { google } from 'googleapis';
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
+
+const calendarID = config.CALENDAR_ID;
+const serviceAccount = {
+    client_email: config.GOOGLE_CLIENT_EMAIL,
+    private_key: config.GOOGLE_PRIVATE_KEY
+};
+
+const serviceAccountAuth = new google.auth.JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
+    scopes: 'https://www.googleapis.com/auth/calendar'
+});
+
+const calendar = google.calendar('v3');
+
+const timeZoneOffset = '-03:00';
 
 const verifyWebhook = async (req, res) => {
     try {
@@ -26,36 +44,37 @@ const verifyWebhook = async (req, res) => {
     }
 };
 
-const messageHandler = async (req, res) => {
-    // let userid = req.body.originalDetectIntentRequest.payload.user.userId;
-    // var user = utils.usersMap.get(userid);
 
-    const action = req.body.queryResult && req.body.queryResult.action ? req.body.queryResult.action : null;
-    const params = req.body.queryResult && req.body.queryResult.parameters ? req.body.queryResult.parameters : null;
-    
-    if (action == 'input.welcome') {
-        console.log('REQ ', req.body);
-        if (params) {
-            for(let obj in req.body.queryResult.outputContexts){
-                req.body.queryResult.outputContexts[obj].parameters.name = 'DSIUASHDUASHDIUHA';
-                req.body.queryResult.outputContexts[obj].parameters['name.original'] = 'DSIUASHDUASHDIUHA';
-            }    
-            req.body.queryResult.parameters = { name: 'DSIUASHDUASHDIUHA' };
-            return res.send(JSON.stringify({
-                parameters: { name: 'DSIUASHDUASHDIUHA' },
-                followupEventInput: {
-                    name: 'welcome',
-                    languageCode: 'pt-BR',
-                    parameters: {
-                        name: 'DSIUASHDUASHDIUHA'
-                    }
-                },
-                outputContexts : req.body.queryResult.outputContexts
-            })
-            );
-        }
-       
-    }
+function createCalendarEvent (dateTimeStart, dateTimeEnd) {
+    return new Promise((resolve, reject) => {
+        calendar.events.list({
+            auth: serviceAccountAuth, // List events for time period
+            calendarId: calendarID,
+            timeMin: dateTimeStart.toISOString(),
+            timeMax: dateTimeEnd.toISOString()
+        }, (err, calendarResponse) => {
+        // Check if there is a event already on the Calendar
+            if (err || calendarResponse.data.items.length > 0) {
+                reject(err || new Error('Requested time conflicts with another appointment'));
+            } else {
+                // Create event for the requested time period
+                calendar.events.insert({ auth: serviceAccountAuth,
+                    calendarId: calendarID,
+                    description: 'Gynaecologist appointment',
+                    resource: {summary: 'Agendamento avaliação',
+                        start: {dateTime: dateTimeStart},
+                        end: {dateTime: dateTimeEnd}}
+                }, (err, event) => {
+                    err ? reject(err) : resolve(event);
+                }
+                );
+            }
+        });
+    });
+}
+
+const messageHandler = async (req, res) => {
+    let senderID = null;
     try {
         let body = req.body;
 
@@ -66,8 +85,11 @@ const messageHandler = async (req, res) => {
 
                 let hookEvent = pageEntry.messaging[0];
                 let senderPsid = hookEvent.sender.id;
+                senderID = hookEvent.sender.id;
 
-                utils.usersMap.get(senderPsid);
+                console.log('SENDERID', senderID);
+
+                utils.setSessionandUser(senderPsid);
 
                 pageEntry.messaging.forEach(function(messagingEvent) {
                     if (messagingEvent.optin) {
@@ -93,6 +115,69 @@ const messageHandler = async (req, res) => {
 
             res.status(200).send('⚡️ [BOT CONSILIO] Event receiving.');
         } 
+
+        const action = req.body.queryResult && req.body.queryResult.action ? req.body.queryResult.action : null;
+        const params = req.body.queryResult && req.body.queryResult.parameters ? req.body.queryResult.parameters : null;
+
+        console.log('BOOOODY: ', body);
+
+        if (action == 'input.welcome') {
+            if (params) {
+                for(let obj in req.body.queryResult.outputContexts){
+                    req.body.queryResult.outputContexts[obj].parameters.name = 'DSIUASHDUASHDIUHA';
+                    req.body.queryResult.outputContexts[obj].parameters['name.original'] = 'DSIUASHDUASHDIUHA';
+                }
+                return res.send(JSON.stringify({
+                    parameters: { name: 'DSIUASHDUASHDIUHA' },
+                    followupEventInput: {
+                        name: 'welcome',
+                        languageCode: 'pt-BR',
+                        parameters: {
+                            name: 'DSIUASHDUASHDIUHA'
+                        }
+                    },
+                    outputContexts : req.body.queryResult.outputContexts
+                })
+                );
+            }
+        }
+        if (action == 'input.schedule') {
+            const dateTimeStart = new Date(Date.parse(params.date.split('T')[0] + 'T' + params.time.split('T')[1].split('-')[0] + timeZoneOffset));
+            const dateTimeEnd = new Date(new Date(dateTimeStart).setHours(dateTimeStart.getHours() + 1));
+            const appointmentTimeString = moment(dateTimeStart).locale('pt-br').format('LLLL');
+    
+            createCalendarEvent(dateTimeStart, dateTimeEnd).then((resp) => {
+                console.log(`Agendamento feito com sucesso. ${appointmentTimeString} Está certo!.`, resp);
+                return res.send(JSON.stringify({
+                    fulfillmentText: `Agendamento realizado com sucesso. Seu horário ${appointmentTimeString} foi agendado.`,
+                    fulfillmentMessages: [
+                        {
+                            text: {
+                                text: [
+                                    `Agendamento realizado com sucesso. Seu horário ${appointmentTimeString} foi agendado.`
+                                ]
+                            }
+                        }
+                    ],
+                })
+                );
+            }).catch(err => {
+                console.log(`${appointmentTimeString}, esse horário não está disponível.`, err);
+                return res.send(JSON.stringify({
+                    fulfillmentText: `Opps o horário ${appointmentTimeString}, não está disponível. Vamos tentar de novo?`,
+                    fulfillmentMessages: [
+                        {
+                            text: {
+                                text: [
+                                    `Opps o horário ${appointmentTimeString}, não está disponível. Vamos tentar de novo?`
+                                ]
+                            }
+                        }
+                    ],
+                })
+                );
+            }); 
+        }
 
     } catch (error) {
         console.log('❌ [BOT CONSILIO] Error in post webhook. ', error);

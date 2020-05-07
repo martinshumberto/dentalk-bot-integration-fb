@@ -6,11 +6,10 @@
 require('dotenv').config();
 import express from 'express';
 import bodyParser from 'body-parser';
-
 import cors from './config/cors';
 import config from './config/variables';
-import webhookRoutes from './routes/webhook';
-import profileRoutes from './routes/profile';
+import mysql from './config/mysql';
+import webhook from './app/webhook';
 
 const app = express()
     .use(bodyParser.json())
@@ -19,8 +18,20 @@ const app = express()
     .use(express.static(__dirname + '/static'));
 
 config.checkEnv();
-webhookRoutes(app);
-profileRoutes(app);
+
+
+/*
+ ** Routes configuration
+ */
+
+app.get('/profile', webhook.setProfile);
+app.get('/webhook', webhook.verifyWebhook);
+app.post('/webhook', webhook.messageHandler);
+
+app.get('/leads', async (req, res) =>{
+    const leads = await mysql.execQuery('SELECT * FROM leads');
+    res.status(200).send(leads);
+});
 
 /*
  ** Middleware configuration

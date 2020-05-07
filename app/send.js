@@ -27,6 +27,7 @@ const sendToDialogFlow = async (sender, textString, params) => {
         config.GOOGLE_PROJECT_ID,
         utils.sessionIds.get(sender)
     );
+
     try {
         const request = {
             session: sessionPath,
@@ -42,8 +43,8 @@ const sendToDialogFlow = async (sender, textString, params) => {
                 }
             }
         };
+        
         const responses = await sessionClient.detectIntent(request);
-
         const result = responses[0].queryResult;
         receive.handleDialogFlowResponse(sender, result);
     } catch (e) {
