@@ -3,7 +3,7 @@ import dialogflow from 'dialogflow';
 import config from '../config/variables';
 import utils from './utils';
 import receive from './receive';
-import graphApi from './graph-api';
+import graphApi from '../services/graph-api';
 
 const credentials = {
     credentials: {
@@ -27,6 +27,7 @@ const sendToDialogFlow = async (sender, textString, params) => {
         config.GOOGLE_PROJECT_ID,
         utils.sessionIds.get(sender)
     );
+
     try {
         const request = {
             session: sessionPath,
@@ -42,9 +43,11 @@ const sendToDialogFlow = async (sender, textString, params) => {
                 }
             }
         };
+        
         const responses = await sessionClient.detectIntent(request);
-
         const result = responses[0].queryResult;
+        console.log('RESULT DIALOG: ', result);
+        console.log('RESULT DIALOG webhookPayload: ', result.webhookPayload.fields.facebook);
         receive.handleDialogFlowResponse(sender, result);
     } catch (e) {
         console.log('❌ [BOT CONSILIO] Error in process message in Dialogflow:');

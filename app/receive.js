@@ -1,7 +1,8 @@
 import { struct } from 'pb-util';
 import send from './send';
 import utils from './utils';
-import graphApi from './graph-api';
+import graphApi from '../services/graph-api';
+import mysql from '../config/mysql';
 
 /**
  * Process message type card
@@ -215,10 +216,51 @@ const handleDFAObj = {
             handleMessages(messages, sender);
         }, 1000);
     },
+    'input.phone': (sender, messages, contexts, parameters) => {
+        send.sendTypingOn(sender);
+        const phone = parameters.fields.phone.stringValue;
+
+        mysql.execQuery(`UPDATE leads SET phone = '${phone}' WHERE senderID = '${sender}'`)
+            .catch(err => {
+                console.log('❌ ERRO: ', err);
+            });
+        setTimeout(function() {
+            handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.email': async (sender, messages, contexts, parameters) => {
+        send.sendTypingOn(sender);
+        const email = parameters.fields.email.stringValue;
+
+        mysql.execQuery(`UPDATE leads SET email = '${email}' WHERE senderID = '${sender}'`)
+            .catch(err => {
+                console.log('❌ ERRO: ', err);
+            });
+
+        setTimeout(function() {
+            handleMessages(messages, sender);
+        }, 1000);
+    },
     'input.schedule': (sender, messages) => {
         send.sendTypingOn(sender);
         setTimeout(function() {
             handleMessages(messages, sender);
+        }, 1000);
+    },
+    'input.unknown': (sender, messages) => {
+        send.sendTypingOn(sender);
+        handleMessages(messages, sender);
+        setTimeout(function() {
+            let text = 'Opps, talvez eu não tenha aprendido o suficiente 😔. \n\n' +
+                    'Podemos tentar de novo, ou se preferir falar com um dos nossos humandos disponíveis 💜.';
+            let replies = [
+                {
+                    'content_type': 'text',
+                    'title': 'Falar com humano',
+                    'payload': 'LIVE_AGENT'
+                }
+            ];
+            send.sendQuickReply(sender, text, replies);
         }, 1000);
     },
     'default': (sender, messages) => {
@@ -296,7 +338,8 @@ const receivedMessage = event => {
 
 const receivedPbObj = {
     'get_started': (senderID, payload) => {
-        send.sendToDialogFlow(senderID, payload);
+        const params = utils.usersMap.get(senderID);
+        send.sendToDialogFlow(senderID, payload, params);
     },
     'view_site': (senderID, payload) => {
         send.sendTextMessage(senderID, payload);
@@ -312,8 +355,6 @@ const receivedPostback = event => {
 
     var payload = event.postback.payload;
 
-    console.log('PAYLOAD', payload);
-
     console.log(
         '⚡️ [BOT CONSILIO] Received postback for user %d and page %d with payload \'%s\' ' +
       'at %d',
@@ -324,7 +365,6 @@ const receivedPostback = event => {
     );
 
     return (receivedPbObj[payload] || receivedPbObj['default'])(senderID, payload);
-
 };
 
 /**

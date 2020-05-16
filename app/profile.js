@@ -1,5 +1,5 @@
 import config from '../config/variables';
-import graphApi from './graph-api';
+import graphApi from '../services/graph-api';
 
 export default {
 

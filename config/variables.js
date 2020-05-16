@@ -14,7 +14,8 @@ const ENV_VARS = [
     'GOOGLE_CLIENT_EMAIL',
     'GOOGLE_PROJECT_ID',
     'GOOGLE_LANGUAGE_CODE',
-    'GOOGLE_PRIVATE_KEY'
+    'GOOGLE_PRIVATE_KEY',
+    'CALENDAR_ID'
 ];
 
 export default {
@@ -37,6 +38,8 @@ export default {
     GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID,
     GOOGLE_LANGUAGE_CODE: process.env.GOOGLE_LANGUAGE_CODE,
     GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
+    
+    CALENDAR_ID: process.env.CALENDAR_ID,
     
 
     get mPlatfom() {
