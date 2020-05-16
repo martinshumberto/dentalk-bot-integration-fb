@@ -2,7 +2,7 @@
 import request from 'request';
 import config from '../config/variables';
 import mysql from '../config/mysql';
-import utils from './utils';
+import utils from '../app/utils';
 
 /**
  * Send call to Facebook Graph API
@@ -45,8 +45,10 @@ const sendCall = async callback => {
                     body.error
                 );
             }
+
+
         }
-    );
+    );         
 };
 
 const callMessengerProfileAPI = requestBody => {
@@ -269,7 +271,7 @@ const addUser = (callback, userId) => {
                         console.log('❌ ERRO: ', err);
                     });
                     if (consulta.length == 0) {
-                        await mysql.execQuery(`INSERT INTO leads (senderID, first_name, last_name, profile_pic) VALUES ('${userId}', '${user.first_name}','${user.last_name}', '${user.profile_pic}')`).catch(err => {
+                        await mysql.execQuery(`INSERT INTO leads (senderID, first_name, last_name, profile_pic) VALUES ('${userId}', '${user.first_name}','${user.last_name}', '${user.profile_pic}'`).catch(err => {
                             console.log('❌ ERRO: ', err);
                         });
                     }

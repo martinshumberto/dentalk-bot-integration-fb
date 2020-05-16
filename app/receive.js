@@ -1,7 +1,7 @@
 import { struct } from 'pb-util';
 import send from './send';
 import utils from './utils';
-import graphApi from './graph-api';
+import graphApi from '../services/graph-api';
 import mysql from '../config/mysql';
 
 /**
@@ -211,10 +211,7 @@ const handleDialogFlowResponse = (sender, response) => {
  */
 const handleDFAObj = {
     'input.welcome': async (sender, messages) => {
-        // const user = utils.usersMap.get(sender);
-
         send.sendTypingOn(sender);
-        // send.sendTextMessage(sender, `Olá ${user.first_name}!`);
         setTimeout(function() {
             handleMessages(messages, sender);
         }, 1000);
@@ -231,7 +228,7 @@ const handleDFAObj = {
             handleMessages(messages, sender);
         }, 1000);
     },
-    'input.email': (sender, messages, contexts, parameters) => {
+    'input.email': async (sender, messages, contexts, parameters) => {
         send.sendTypingOn(sender);
         const email = parameters.fields.email.stringValue;
 
@@ -341,7 +338,8 @@ const receivedMessage = event => {
 
 const receivedPbObj = {
     'get_started': (senderID, payload) => {
-        send.sendToDialogFlow(senderID, payload);
+        const params = utils.usersMap.get(senderID);
+        send.sendToDialogFlow(senderID, payload, params);
     },
     'view_site': (senderID, payload) => {
         send.sendTextMessage(senderID, payload);

@@ -9,7 +9,8 @@ import bodyParser from 'body-parser';
 import cors from './config/cors';
 import config from './config/variables';
 import mysql from './config/mysql';
-import webhook from './app/webhook';
+import facebook from './app/facebook';
+import dialogflow from './app/dialogflow';
 
 const app = express()
     .use(bodyParser.json())
@@ -24,9 +25,9 @@ config.checkEnv();
  ** Routes configuration
  */
 
-app.get('/profile', webhook.setProfile);
-app.get('/webhook', webhook.verifyWebhook);
-app.post('/webhook', webhook.messageHandler);
+app.get('/profile', facebook.setProfile);
+app.get('/webhook', dialogflow.messageHandler);
+app.post('/webhook', dialogflow.messageHandler);
 
 app.get('/leads', async (req, res) =>{
     const leads = await mysql.execQuery('SELECT * FROM leads');

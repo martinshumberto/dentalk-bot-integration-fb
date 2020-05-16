@@ -1,6 +1,6 @@
 'use strict';
 const uuid = require('uuid');
-import graphAPI from './graph-api';
+import graphAPI from '../services/graph-api';
 
 /**
  * Define is undefined
